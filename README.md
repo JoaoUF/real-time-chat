@@ -1,22 +1,14 @@
-# TODO
+## TODO
 
+- [ ] test oauth2
+- [ ] add chatroom route
+- [ ] add configure npm service in the launcher
 - [ ] base frontend
 - [ ] create google credentials
-- [ ] create personal user?
 - [ ] remove unescential urls?
 - [ ] change url destination from core to msauthentication
 
-# STEPS
-
-- [ ] oauth2 verification email to enter
-- [ ] start with a default room for a AI
-- [ ] search contacts via gmail (maybe add with the account already know) and send them a contact request
-- [ ] create a room with one or multiple contacts
-- [ ] in the chat rooms you can upload images, text, and emojis
-- [ ] checks for send and read in the messages
-- [ ] messages display hour time and chatroom display day time
-
-# USER REQUIREMENT
+## USER REQUIREMENT
 
 These are some of the user requirements I have in mind, probably I will add more or forget to do it:
 | **Module** | **Requirement ID** | **Requirement Description** | **Done** |
@@ -46,9 +38,9 @@ These are some of the user requirements I have in mind, probably I will add more
 | **9. Administrative Module** | 9.01 | Admins should have the ability to manage users, including activating, deactivating, and viewing user activity. | [ ] |
 | | 9.02 | The system should provide usage analytics and reports to administrators. | [ ] |
 
-# References
+## References
 
 1. Libraries documentation:
    1. [dj-rest-auth](https://dj-rest-auth.readthedocs.io/en/latest/installation.html)
-   1. [django-allauth](https://docs.allauth.org/en/latest/socialaccount/providers/google.html)
-   1. [simple-jwt](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html)
+   2. [django-allauth](https://docs.allauth.org/en/latest/socialaccount/providers/google.html)
+   3. [simple-jwt](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html)

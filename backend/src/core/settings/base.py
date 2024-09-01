@@ -202,17 +202,17 @@ REST_AUTH = {
 
 # DJANGO ALLAUTH
 # DEFAULT - https://docs.allauth.org/en/latest/account/configuration.html
-# SOCIALACCOUNT_PROVIDERS = {
-#     "google": {
-#         "SCOPE": [
-#             "profile",
-#             "email",
-#         ],
-#         "AUTH_PARAMS": {
-#             "access_type": "online",
-#         },
-#     }
-# }
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "offline",
+        },
+    }
+}
 SOCIALACCOUNT_QUERY_EMAIL = True
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
