@@ -1,11 +1,6 @@
 ## TODO
 
-- [ ] test oauth2
 - [ ] add chatroom route
-- [ ] add configure npm service in the launcher
-- [ ] base frontend
-- [ ] create google credentials
-- [ ] remove unescential urls?
 - [ ] change url destination from core to msauthentication
 
 ## USER REQUIREMENT

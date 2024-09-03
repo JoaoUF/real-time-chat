@@ -16,9 +16,9 @@ import Stack from "@mui/joy/Stack";
 import { CssVarsProvider, extendTheme, useColorScheme } from "@mui/joy/styles";
 import Typography from "@mui/joy/Typography";
 import { useGoogleLogin } from "@react-oauth/google";
-import * as React from "react";
+import { useContext, useEffect, useState } from "react";
+import AuthContext from "../contexts/AuthContext";
 import GoogleIcon from "../icons/GoogleIcons";
-import { AuthenticationService } from "../services/http/Authentication/Authentication.service";
 
 interface FormElements extends HTMLFormControlsCollection {
   email: HTMLInputElement;
@@ -32,9 +32,9 @@ interface SignInFormElement extends HTMLFormElement {
 function ColorSchemeToggle(props: IconButtonProps) {
   const { onClick, ...other } = props;
   const { mode, setMode } = useColorScheme();
-  const [mounted, setMounted] = React.useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  React.useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);
 
   return (
     <IconButton
@@ -53,28 +53,18 @@ function ColorSchemeToggle(props: IconButtonProps) {
   );
 }
 
-const customTheme = extendTheme({ defaultColorScheme: "dark" });
+const baseTheme = extendTheme();
 
 export default function JoySignInSideTemplate() {
-  const googleResponse = async (access_token: any) => {
-    console.log(access_token);
-    try {
-      let authenticationService = new AuthenticationService();
-      let authenticationResponse =
-        await authenticationService.register_google_access_toke(access_token);
-      console.log(authenticationResponse);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  let { loginGoogle }: any = useContext(AuthContext);
 
-  const loginGoogle = useGoogleLogin({
+  const loginGoogleOnClick = useGoogleLogin({
     onSuccess: (credentialResponse) =>
-      googleResponse(credentialResponse.access_token),
+      loginGoogle(credentialResponse.access_token),
   });
 
   return (
-    <CssVarsProvider theme={customTheme} disableTransitionOnChange>
+    <CssVarsProvider theme={baseTheme} disableTransitionOnChange>
       <CssBaseline />
       <GlobalStyles
         styles={{
@@ -160,7 +150,7 @@ export default function JoySignInSideTemplate() {
                 variant="soft"
                 color="neutral"
                 fullWidth
-                onClick={() => loginGoogle()}
+                onClick={() => loginGoogleOnClick()}
                 startDecorator={<GoogleIcon />}
               >
                 Continue with Google
