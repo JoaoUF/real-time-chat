@@ -2,6 +2,7 @@ import { useRoutes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import SignInSide from "./pages/SignInSide";
 import PrivateRoute from "./utils/PrivateRoute";
+import ChatRoom from "./pages/ChatRoom";
 
 export default function App() {
   const routes = useRoutes([
@@ -15,7 +16,7 @@ export default function App() {
         },
         {
           path: "/roomchat",
-          element: <h2>roomchat</h2>,
+          element: <ChatRoom />,
         },
         {
           path: "/",

@@ -25,6 +25,16 @@ DATABASES = {
     }
 }
 
+# CHANNELS
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 # DJANGO STATIC CONTENT
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
