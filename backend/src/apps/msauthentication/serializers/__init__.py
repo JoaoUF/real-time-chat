@@ -1,1 +1,1 @@
-from .CustomUserSerializer import CustomSerializerIdEmailFullName
+from .CustomUserSerializer import CustomUserSerializerIdEmailFullName

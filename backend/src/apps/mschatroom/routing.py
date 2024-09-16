@@ -1,6 +1,6 @@
 from django.urls import path
-from .consumers import MyConsumer
+from mschatroom.consumers import BaseConection
 
 websocket_urlpatterns = [
-    path("chat/", MyConsumer.as_asgi()),
+    path("chat/<int:user>/", BaseConection.as_asgi()),
 ]

@@ -42,6 +42,7 @@ THIRD_PARTY_APPS = [
 
 PERSONAL_APPS = [
     "msauthentication",
+    "mschatroom",
 ]
 
 DJANGO_MIDDLEWARE = [

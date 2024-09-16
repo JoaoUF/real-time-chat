@@ -1,15 +1,17 @@
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import { Box, Chip, IconButton, Input } from "@mui/joy";
+import { Box, Chip, IconButton, Input, ModalDialogProps } from "@mui/joy";
 import List from "@mui/joy/List";
 import Sheet from "@mui/joy/Sheet";
 import Stack from "@mui/joy/Stack";
 import Typography from "@mui/joy/Typography";
+import React from "react";
 import { ChatProps } from "../types/types";
 import { toggleMessagesPane } from "../utils/ChatRoomUtils";
 import ChatListItem from "./ChatListItem";
 import ColorSchemeToggle from "./ColorSchemeToggle";
+import DialogVerticalScroll from "./DialogVerticalScroll";
 
 type ChatsPaneProps = {
   chats: ChatProps[];
@@ -19,6 +21,10 @@ type ChatsPaneProps = {
 
 export default function ChatsPane(props: ChatsPaneProps) {
   const { chats, setSelectedChat, selectedChatId } = props;
+  const [layout, setLayout] = React.useState<
+    ModalDialogProps["layout"] | undefined
+  >(undefined);
+
   return (
     <Sheet
       sx={{
@@ -73,10 +79,12 @@ export default function ChatsPane(props: ChatsPaneProps) {
             aria-label="edit"
             color="neutral"
             size="sm"
+            onClick={() => setLayout("center")}
             // sx={{ display: { xs: "none", sm: "unset" } }}
           >
             <EditNoteRoundedIcon />
           </IconButton>
+          <DialogVerticalScroll layout={layout} setLayout={setLayout} />
           <IconButton
             variant="plain"
             aria-label="edit"

@@ -1,1 +1,1 @@
-from .MyConsumer import MyConsumer
+from .BaseConection import BaseConection
