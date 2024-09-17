@@ -1,1 +1,4 @@
-from .CustomUserSerializer import CustomUserSerializerIdEmailFullName
+from .CustomUserSerializer import (
+    CustomUserSerializerIdEmailFullName,
+    CustomUserSerializerBaseProfile,
+)

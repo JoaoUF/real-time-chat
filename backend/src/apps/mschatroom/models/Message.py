@@ -22,3 +22,4 @@ class Message(Model):
 
     class Meta:
         db_table = "MAE_MESSAGE"
+        ordering = ["-sent_at"]
