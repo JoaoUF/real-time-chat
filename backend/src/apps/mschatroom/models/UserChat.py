@@ -22,5 +22,20 @@ class UserChat(Model):
         )
 
     @property
-    def get_last_message(self):
+    def return_list_user_chat_related(self):
+        return UserChat.objects.filter(
+            ~Q(id_user=self.id_user)
+            & Q(
+                id_chat__in=UserChat.objects.filter(id_user=self.id_user).values(
+                    "id_chat"
+                )
+            )
+        )
+
+    @property
+    def return_custom_user(self):
+        return CustomUser.objects.get(pk=self.id_user)
+
+    @property
+    def return_last_message(self):
         return Message.objects.filter(id_chat=self.id_chat).first()
