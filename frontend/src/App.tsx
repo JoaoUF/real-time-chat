@@ -1,14 +1,16 @@
 import { useRoutes } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import SignInSide from "./pages/SignInSide";
-import PrivateRoute from "./utils/PrivateRoute";
+// import { AuthProvider } from "./contexts/AuthContext";
 import ChatRoom from "./pages/ChatRoom";
+import SignInSide from "./pages/SignInSide";
+import TestWS from "./TestWS";
+import PrivateRoute from "./utils/PrivateRoute";
 
 export default function App() {
   const routes = useRoutes([
     {
       path: "/",
-      element: <AuthProvider />,
+      element: <TestWS />,
+      // element: <AuthProvider />,
       children: [
         {
           path: "/",

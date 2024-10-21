@@ -1,4 +1,3 @@
-from typing import List
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
     ListModelMixin,
@@ -23,42 +22,44 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
     serializer_class = CustomUserSerializerBaseProfile
 
     @action()
-    async def subscribe_to_connection_history(self, id, **kwargs):
+    async def subscribe_to_connection_history(self, id, request_id, **kwargs):
         self.user_id = id
-        await self.connection_history_activity.subscribe(sesion=id)
+        await self.connection_history_activity.subscribe(request_id=request_id)  # type: ignore
 
     @action()
-    async def change_connection_history_online(self):
+    async def change_connection_history_online(self, **kwargs):
         await self.change_user_connection_status(new_status="online")
         await self.notify_change_user_connection_history()
 
     @action()
-    async def change_connection_history_offline(self):
+    async def change_connection_history_offline(self, **kwargs):
         await self.change_user_connection_status(new_status="offline")
         await self.notify_change_user_connection_history()
 
     @action()
-    async def list_user_chat(self, id, **kwarg):
+    async def list_user_chat(self, **kwarg):
         await self.get_list_user_detail()
 
-    # @model_observer(ConnectionHistory)
-    # async def connection_history_activity(
-    #     self,
-    #     message,
-    #     observer: None,
-    #     subscribing_request_ids=[],
-    #     **kwargs,
-    # ):
-    #     pass
+    @model_observer(ConnectionHistory)
+    async def connection_history_activity(  # type: ignore
+        self,
+        message,
+        observer: None,
+        subscribing_request_ids=[],
+        **kwargs,
+    ):
+        pass
 
-    @connection_history_activity.groups_for_consumer
+    @connection_history_activity.groups_for_consumer  # type: ignore
     def connection_history_activity(self, sesion=None, **kwargs):
         if sesion is not None:
             print(f"-user__{sesion}")
             yield f"-user__{sesion}"
 
     async def notify_change_user_connection_history(self):
+        print("notify other users")
         listIdChat = await self.get_list_id_chat()
+        print("mostrar grupos", self.groups)
         for group in self.groups:
             print("group--", group)
             if group[6:] in listIdChat:
