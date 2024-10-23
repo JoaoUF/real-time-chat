@@ -38,7 +38,8 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
 
     @action()
     async def list_user_chat(self, **kwarg):
-        await self.get_list_user_detail()
+        # await self.get_list_user_detail()
+        await self.get_list_user_detail_version_two()
 
     @model_observer(ConnectionHistory)
     async def connection_history_activity(  # type: ignore
@@ -84,14 +85,14 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
                     {
                         "uuid_user_chat": userChat.id,
                         "user": {
-                            **CustomUserSerializerBaseProfile(
+                            **await self.return_customer_user_serialer(
                                 await self.get_custom_user(userChat.id_user)
-                            ).data  # type: ignore
+                            )
                         },
-                        "message": await {
-                            **MessageSerializerLastMessage(
+                        "message": {
+                            **await self.return_message_serializer(
                                 await self.get_last_message(userChat.id_chat)
-                            ).data  # type: ignore
+                            )
                         },
                     }
                     for userChat in listUserChat
@@ -99,13 +100,46 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
             }
         )
 
+    async def get_list_user_detail_version_two(self):
+        listUserChat = await self.get_filter_list_user_chat(self.user_id)
+        await self.send_json(
+            {
+                "type": "list_chat_users",
+                "data": await self.iterate_list_user(listUserChat),
+            }
+        )
+
+    @database_sync_to_async
+    def iterate_list_user(self, list_user_chat):
+        return [
+            {
+                "uuid_user_chat": userChat.id,
+            }
+            for userChat in list_user_chat  # type: ignore
+        ]
+
+    # ERROR
+    # TypeError: CustomUserConsumer.iterate_list_user() takes 1 positional argument but 2 were given
+    @database_sync_to_async
+    def return_message_serializer(message):
+        return MessageSerializerLastMessage(message).data
+
+    @database_sync_to_async
+    def return_customer_user_serialer(customuser):
+        return CustomUserSerializerBaseProfile(customuser).data
+
     @database_sync_to_async
     def get_list_id_chat(self):
         return UserChat.objects.filter(id_user=self.user_id).values("id_chat")
 
     @database_sync_to_async
     def get_filter_list_user_chat(self, pk: int):
-        return UserChat.objects.get(id_user=pk).return_list_user_chat_related
+        print("user-id", self.user_id)
+        userChat = UserChat.objects.get(id_user=pk)
+        print("current-user", userChat)
+        listReturn = userChat.return_list_user_chat_related
+        print("lists-user", listReturn)
+        return listReturn
 
     @database_sync_to_async
     def get_custom_user(self, pk: int) -> CustomUser:
