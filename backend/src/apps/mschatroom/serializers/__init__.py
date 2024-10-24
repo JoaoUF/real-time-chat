@@ -1,6 +1,6 @@
 from .ChatSerializer import ChatSerializer
 from .GroupSerializer import GroupSerializer
-from .UserChatSerializer import UserChatSerializer
+from .UserChatSerializer import UserChatSerializer, UserChatCustomUserMessageSerializer
 from .UserGroupSerializer import UserGroupSerializer
 from .MessageSerializer import Message, MessageSerializerLastMessage
 from .ConnectionHistorySerializers import ConnectionHistorySerializer

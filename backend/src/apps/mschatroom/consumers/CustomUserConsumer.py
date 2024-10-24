@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
     ListModelMixin,
@@ -12,20 +13,34 @@ from msauthentication.serializers import CustomUserSerializerBaseProfile
 from mschatroom.serializers import (
     MessageSerializerLastMessage,
     ConnectionHistorySerializer,
+    UserChatCustomUserMessageSerializer,
 )
 from djangochannelsrestframework.observer import model_observer
 from djangochannelsrestframework.decorators import action
-import json
-from django.core import serializers
+
+
+"""
+DOTO:
+- create a disconnect function which erase user_id and change to offline
+"""
 
 
 class CustomUserConsumer(GenericAsyncAPIConsumer):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializerBaseProfile
 
+    async def disconnect(self, code):
+        if hasattr(self, "user_id"):
+            await self.change_user_connection_status(new_status="offline")
+            await self.notify_change_user_connection_history()
+        return await super().disconnect(code)
+
     @action()
     async def subscribe_to_connection_history(self, id, request_id, **kwargs):
-        self.user_id = id
+        if await self.check_custom_user_exist(pk=id):
+            self.user_id = id
+        else:
+            raise
         await self.connection_history_activity.subscribe(request_id=request_id)  # type: ignore
 
     @action()
@@ -34,14 +49,14 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
         await self.notify_change_user_connection_history()
 
     @action()
-    async def change_connection_history_offline(self, **kwargs):
-        await self.change_user_connection_status(new_status="offline")
-        await self.notify_change_user_connection_history()
-
-    @action()
     async def list_user_chat(self, **kwarg):
-        # await self.get_list_user_detail()
-        await self.get_list_user_detail_version_two()
+        listUserChat = await self.get_filter_list_user_chat(pk=self.user_id)
+        await self.send_json(
+            {
+                "type": "list_chat_users",
+                "data": await self.get_user_rooms_data(listUserChat),
+            }
+        )
 
     @model_observer(ConnectionHistory)
     async def connection_history_activity(  # type: ignore
@@ -78,63 +93,12 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
                     },
                 )
 
-    async def get_list_user_detail(self):
-        listUserChat = await self.get_filter_list_user_chat(self.user_id)
-        await self.send_json(
-            {
-                "type": "list_chat_users",
-                "data": await self.iterate_list_user(listUserChat),
-                "data": [
-                    {
-                        "uuid_user_chat": userChat.id,
-                        "user": {
-                            **await self.return_customer_user_serialer(
-                                await self.get_custom_user(userChat.id_user)
-                            )
-                        },
-                        "message": {
-                            **await self.return_message_serializer(
-                                await self.get_last_message(userChat.id_chat)
-                            )
-                        },
-                    }
-                    for userChat in listUserChat
-                ],
-            }
-        )
-
-    async def get_list_user_detail_version_two(self):
-        listUserChat = await self.get_filter_list_user_chat(pk=self.user_id)
-        await self.send_json(
-            {
-                "type": "list_chat_users",
-                "data": await self.iterate_list_user(listUserChat),
-            }
-        )
-
     @database_sync_to_async
-    def iterate_list_user(self, list_user_chat):
-        data = [
-            {
-                "uuid_user_chat": str(userChat.id),
-                "user": {
-                    **CustomUserSerializerBaseProfile(
-                        CustomUser.objects.get(pk=userChat.id_user.id)
-                    ).data  # type: ignore
-                },
-            }
+    def get_user_rooms_data(self, list_user_chat):
+        return [
+            {**UserChatCustomUserMessageSerializer(userChat).data}  # type: ignore
             for userChat in list_user_chat
         ]
-        print("data---------", data)
-        return data
-
-    @database_sync_to_async
-    def return_message_serializer(message):
-        return {**MessageSerializerLastMessage(message).data}  # type: ignore
-
-    @database_sync_to_async
-    def return_customer_user_serialer(customuser):
-        return {**CustomUserSerializerBaseProfile(customuser).data}  # type: ignore
 
     @database_sync_to_async
     def get_list_id_chat(self):
@@ -142,37 +106,25 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
 
     @database_sync_to_async
     def get_filter_list_user_chat(self, pk: int):
-        userChat = UserChat.objects.get(id_user=pk)
-        listReturn = userChat.return_list_user_chat_related
-        return listReturn
+        return UserChat.objects.get(id_user=pk).return_list_user_chat_related
 
     @database_sync_to_async
     def get_custom_user(self, pk: int) -> CustomUser:
         return CustomUser.objects.get(pk=pk)
 
     @database_sync_to_async
-    def get_last_message(self, uuid_chat):
-        return Message.objects.filter(id_chat=uuid_chat).first()
+    def check_custom_user_exist(self, pk: int) -> bool:
+        return CustomUser.objects.filter(pk=pk).exists()
 
     @database_sync_to_async
-    def change_user_connection_status(self, new_status):
+    def change_user_connection_status(self, new_status) -> None:
         try:
             current_user = CustomUser.objects.get(id=self.user_id)
+            current_history, create = ConnectionHistory.objects.get_or_create(
+                user=current_user
+            )
+            if not create:
+                current_history.status = new_status
+                current_history.save()
         except ObjectDoesNotExist:
             raise
-
-        current_history, create = ConnectionHistory.objects.get_or_create(
-            user=current_user
-        )
-        if not create:
-            current_history.status = new_status
-            current_history.save()
-
-
-"""
-REFERENCES:
-- https://djangochannelsrestframework.readthedocs.io/en/latest/examples/filtered_model_observer.html
-- https://djangochannelsrestframework.readthedocs.io/en/latest/observer/observer.html#djangochannelsrestframework.observer.model_observer
-- https://stackoverflow.com/questions/73952014/subscribe-to-all-changes-of-instances-of-the-model
-- https://stackoverflow.com/questions/66166142/contacting-another-websocket-server-from-inside-django-channels
-"""

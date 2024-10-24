@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] add chatroom route
+- [ ] handle channels errors
 - [ ] change url destination from core to msauthentication
 
 ## USER REQUIREMENT
@@ -39,3 +39,5 @@ These are some of the user requirements I have in mind, probably I will add more
    1. [dj-rest-auth](https://dj-rest-auth.readthedocs.io/en/latest/installation.html)
    2. [django-allauth](https://docs.allauth.org/en/latest/socialaccount/providers/google.html)
    3. [simple-jwt](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html)
+   4. [channels](https://channels.readthedocs.io/en/latest/)
+   5. [django-rest-framework-channels](https://djangochannelsrestframework.readthedocs.io/en/latest/)

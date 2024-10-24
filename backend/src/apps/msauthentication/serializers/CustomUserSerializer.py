@@ -10,11 +10,15 @@ class CustomUserSerializerIdEmailFullName(serializers.ModelSerializer):
 
 
 class CustomUserSerializerBaseProfile(serializers.ModelSerializer):
-    status = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField("get_status")
+    full_name = serializers.SerializerMethodField("get_full_name")
 
     class Meta:
         model = CustomUser
-        fields = ["id", "first_name", "last_name", "email", "status"]
+        fields = ["id", "full_name", "email", "status"]
 
-    def get_status(self, obj):
-        return ConnectionHistory.objects.get(user=obj.id).status
+    def get_status(self, instance):
+        return ConnectionHistory.objects.get(user=instance.id).status
+
+    def get_full_name(self, instance):
+        return instance.get_full_name
