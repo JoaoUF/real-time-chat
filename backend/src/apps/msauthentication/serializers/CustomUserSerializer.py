@@ -17,4 +17,4 @@ class CustomUserSerializerBaseProfile(serializers.ModelSerializer):
         fields = ["id", "first_name", "last_name", "email", "status"]
 
     def get_status(self, obj):
-        return ConnectionHistory.objects.get(id=obj.pk).status
+        return ConnectionHistory.objects.get(user=obj.id).status

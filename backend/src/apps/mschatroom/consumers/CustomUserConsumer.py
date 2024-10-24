@@ -15,6 +15,8 @@ from mschatroom.serializers import (
 )
 from djangochannelsrestframework.observer import model_observer
 from djangochannelsrestframework.decorators import action
+import json
+from django.core import serializers
 
 
 class CustomUserConsumer(GenericAsyncAPIConsumer):
@@ -81,6 +83,7 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
         await self.send_json(
             {
                 "type": "list_chat_users",
+                "data": await self.iterate_list_user(listUserChat),
                 "data": [
                     {
                         "uuid_user_chat": userChat.id,
@@ -101,7 +104,7 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
         )
 
     async def get_list_user_detail_version_two(self):
-        listUserChat = await self.get_filter_list_user_chat(self.user_id)
+        listUserChat = await self.get_filter_list_user_chat(pk=self.user_id)
         await self.send_json(
             {
                 "type": "list_chat_users",
@@ -111,22 +114,27 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
 
     @database_sync_to_async
     def iterate_list_user(self, list_user_chat):
-        return [
+        data = [
             {
-                "uuid_user_chat": userChat.id,
+                "uuid_user_chat": str(userChat.id),
+                "user": {
+                    **CustomUserSerializerBaseProfile(
+                        CustomUser.objects.get(pk=userChat.id_user.id)
+                    ).data  # type: ignore
+                },
             }
-            for userChat in list_user_chat  # type: ignore
+            for userChat in list_user_chat
         ]
+        print("data---------", data)
+        return data
 
-    # ERROR
-    # TypeError: CustomUserConsumer.iterate_list_user() takes 1 positional argument but 2 were given
     @database_sync_to_async
     def return_message_serializer(message):
-        return MessageSerializerLastMessage(message).data
+        return {**MessageSerializerLastMessage(message).data}  # type: ignore
 
     @database_sync_to_async
     def return_customer_user_serialer(customuser):
-        return CustomUserSerializerBaseProfile(customuser).data
+        return {**CustomUserSerializerBaseProfile(customuser).data}  # type: ignore
 
     @database_sync_to_async
     def get_list_id_chat(self):
@@ -134,11 +142,8 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
 
     @database_sync_to_async
     def get_filter_list_user_chat(self, pk: int):
-        print("user-id", self.user_id)
         userChat = UserChat.objects.get(id_user=pk)
-        print("current-user", userChat)
         listReturn = userChat.return_list_user_chat_related
-        print("lists-user", listReturn)
         return listReturn
 
     @database_sync_to_async

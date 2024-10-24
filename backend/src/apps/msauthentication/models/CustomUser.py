@@ -15,4 +15,7 @@ class CustomUser(AbstractUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    def __str__(self):
+        return "%s object (%s)" % (self.__class__.__name__, self.pk)
+
     objects = CustomUserManager()  # type: ignore
