@@ -1,5 +1,5 @@
-from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from django.core.exceptions import ObjectDoesNotExist
+from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from channels.db import database_sync_to_async
 from mschatroom.models import UserChat, ConnectionHistory
 from msauthentication.models import CustomUser
@@ -7,74 +7,65 @@ from msauthentication.serializers import CustomUserSerializerBaseProfile
 from mschatroom.serializers import UserChatCustomUserMessageSerializer
 from djangochannelsrestframework.observer import model_observer
 from djangochannelsrestframework.decorators import action
+from rest_framework import status
+from django.http.response import Http404
+
+
+"""
+TODO:
+- add a model observer for UserChat
+- add a filtered model observer for Messages
+
+CKECK:
+- if send to a particular users using a model observer
+- if create a filtered model for each user
+"""
 
 
 class CustomUserConsumer(GenericAsyncAPIConsumer):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializerBaseProfile
 
-    async def connect(self):
-        id = self.scope["url_route"]["kwargs"]["id"]
-        if await self.check_custom_user_exist(pk=id):
-            self.user_id = id
-            return await super().connect()
-        else:
-            return {}, 404
+    @action()
+    async def subscribe_history_activity(self, request_id, **kwargs):
+        await self.exist_custom_user(pk=request_id)
+        await self.connection_history_activity.subscribe(request_id=request_id)  # type: ignore
+        return {}, status.HTTP_200_OK
 
     @action()
-    async def subscribe_to_observer(self, request_id, session=None, **kwargs):
-        await self.connection_history_activity.subscribe(session=session, request_id=request_id)  # type: ignore
-
-    @action()
-    async def unsubscribe_to_observer(self, request_id, **kwargs):
+    async def unsubscribe_history_activity(self, request_id, **kwargs):
+        await self.exist_custom_user(pk=request_id)
         await self.connection_history_activity.unsubscribe(request_id=request_id)  # type: ignore
+        return {}, status.HTTP_200_OK
 
     @action()
-    async def change_user_status(self, request_id, status, **kwargs):
-        await self.change_user_connection_status(new_status=status)
-        await self.notify_change_user_connection_history()
+    async def patch_user_status(self, request_id, status, **kwargs):
+        await self.exist_custom_user(pk=request_id)
+        await self.path_user_connection_status(new_status=status, pk=request_id)
+        return {}, status.HTTP_200_OK
 
     @action()
-    async def list_user_chat(self, request_id, **kwarg):
-        listUserChat = await self.get_filter_list_user_chat(pk=self.user_id)
+    async def get_list_user_chat(self, request_id, **kwarg):
+        await self.exist_custom_user(pk=request_id)
+        listUserChat = await self.get_filter_list_user_chat(id=request_id)
         await self.send_json(
             {
                 "type": "list_chat_users",
                 "data": await self.get_user_rooms_data(listUserChat),
-            }
+            },
         )
 
+    # print subscribing_requets_ids
+    # check if print my request_id
+    # check if send other users works adding the the value in a dict
     @model_observer(ConnectionHistory)
     async def connection_history_activity(  # type: ignore
         self, message, observer: None, subscribing_request_ids=[], **kwargs
     ):
         pass
-
-    @connection_history_activity.groups_for_consumer  # type: ignore
-    def connection_history_activity(self, session=None, **kwargs):
-        if session is not None:
-            print(f"-request_id__{session}")
-            yield f"-request_id__{session}"
-            yield f"-other_id__{session}"
-
-    async def notify_change_user_connection_history(self):
-        print("notify other users")
-        listIdChat = await self.get_list_id_chat()
-        print("mostrar grupos", self.groups)
-        for group in self.groups:
-            print("group--", group)
-            if group[6:] in listIdChat:
-                await self.channel_layer.group_send(  # type: ignore
-                    group,
-                    {
-                        "type": "update_connection_history",
-                        "user": {
-                            **CustomUserSerializerBaseProfile(
-                                await self.get_custom_user(int(group[6:]))
-                            ).data  # type: ignore
-                        },
-                    },
-                )
+        # print("OBSERVER")
+        # print("subscribing-request-list", subscribing_request_ids)
+        # print("request_id", request_id)  # type: ignore
 
     @database_sync_to_async
     def get_user_rooms_data(self, list_user_chat):
@@ -83,9 +74,9 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
             for userChat in list_user_chat
         ]
 
-    @database_sync_to_async
-    def get_list_id_chat(self):
-        return UserChat.objects.filter(id_user=self.user_id).values("id_chat")
+    # @database_sync_to_async
+    # def get_list_id_chat(self):
+    #     return UserChat.objects.filter(id_user=self.user_id).values("id_chat")
 
     @database_sync_to_async
     def get_filter_list_user_chat(self, pk: int):
@@ -96,18 +87,16 @@ class CustomUserConsumer(GenericAsyncAPIConsumer):
         return CustomUser.objects.get(pk=pk)
 
     @database_sync_to_async
-    def check_custom_user_exist(self, pk: int) -> bool:
-        return CustomUser.objects.filter(pk=pk).exists()
+    def exist_custom_user(self, pk: int):
+        if not CustomUser.objects.filter(pk=pk).exists():
+            raise Http404
 
     @database_sync_to_async
-    def change_user_connection_status(self, new_status):
-        try:
-            current_user = CustomUser.objects.get(id=self.user_id)
-            current_history, create = ConnectionHistory.objects.get_or_create(
-                user=current_user
-            )
-            if not create:
-                current_history.status = new_status
-                current_history.save()
-        except ObjectDoesNotExist:
-            return {}, 400
+    def path_user_connection_status(self, new_status, pk):
+        current_user = CustomUser.objects.get(id=pk)
+        current_history, create = ConnectionHistory.objects.get_or_create(
+            user=current_user
+        )
+        if not create:
+            current_history.status = new_status
+            current_history.save()
